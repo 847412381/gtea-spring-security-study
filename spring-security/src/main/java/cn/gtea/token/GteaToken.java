@@ -2,8 +2,6 @@ package cn.gtea.token;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.AuthorityUtils;
-
 import java.util.Collection;
 
 /**
