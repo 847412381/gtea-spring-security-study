@@ -1,11 +1,18 @@
 package cn.gtea.service;
 
 import cn.gtea.config.GteaUser;
+import cn.gtea.dao.GteaOrdinaryUserDao;
+import cn.gtea.dao.GteaOrdinaryUserRoleDao;
 import cn.gtea.dto.AuthenticationDTO;
+import cn.gtea.entity.GteaOrdinaryUserEntity;
+import cn.gtea.entity.GteaOrdinaryUserRoleEntity;
 import cn.gtea.token.GteaToken;
 import cn.gtea.utils.GsonUtil;
 import cn.gtea.utils.JedisUtil;
+import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -16,15 +23,28 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.UserDetailsManager;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import redis.clients.jedis.Jedis;
+
+import java.util.List;
 
 /**
  * @author Ayeze_Mizon
  * 2022-05-29
  */
 @Slf4j
+@Component
 public class GteaUserDetailServiceManager implements UserDetailsManager {
+
+    @Autowired(required = false)
+    private GteaOrdinaryUserDao gteaOrdinaryUserDao;
+    @Autowired(required = false)
+    private GteaOrdinaryUserRoleDao gteaOrdinaryUserRoleDao;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -119,22 +139,46 @@ public class GteaUserDetailServiceManager implements UserDetailsManager {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        AuthenticationDTO authenticationDTO;
-        Jedis jedis = JedisUtil.create();
-        GteaUser gteaUser = new GteaUser();
-        try {
-            Gson gson = GsonUtil.includeNullCreate();
-            String gtea = jedis.hget(username, username);
-            if (StrUtil.isEmpty(gtea)) {
-                throw new RuntimeException("redis查询用户不存在");
-            }
-            log.info("redis查出结果 ===> " + gtea);
-            authenticationDTO = gson.fromJson(gtea, AuthenticationDTO.class);
-            BeanUtils.copyProperties(authenticationDTO, gteaUser);
-        } finally {
-            jedis.close();
+        GteaOrdinaryUserEntity entity = gteaOrdinaryUserDao.selectOne(
+                new LambdaQueryWrapper<GteaOrdinaryUserEntity>()
+                        .eq(GteaOrdinaryUserEntity::getUserName, username));
+        if (ObjectUtil.isNull(entity)) {
+            throw new RuntimeException("用户不存在");
         }
-        return gteaUser;
+        List<GteaOrdinaryUserRoleEntity> rolesEntity = gteaOrdinaryUserRoleDao.selectList(
+                new LambdaQueryWrapper<GteaOrdinaryUserRoleEntity>()
+                        .eq(GteaOrdinaryUserRoleEntity::getOrdinaryUserId, entity.getId()));
+        if (CollectionUtil.isEmpty(rolesEntity)) {
+            throw new RuntimeException("用户无角色权限");
+        }
+        String[] roles = new String[rolesEntity.size()];
+        for (int i = 0; i < rolesEntity.size(); i++) {
+            roles[i] = rolesEntity.get(i).getUserRole();
+        }
+
+        return GteaUser.builder()
+                .username(entity.getUserName())
+                .password(entity.getUserPass())
+                .authorities(roles)
+                .passwordEncoder(t -> passwordEncoder.encode(t)).build();
+
+//        AuthenticationDTO authenticationDTO;
+//        Jedis jedis = JedisUtil.create();
+//        GteaUser gteaUser = new GteaUser();
+//        try {
+//            Gson gson = GsonUtil.includeNullCreate();
+//            String gtea = jedis.hget(username, username);
+//            if (StrUtil.isEmpty(gtea)) {
+//                throw new RuntimeException("redis查询用户不存在");
+//            }
+//            log.info("redis查出结果 ===> " + gtea);
+//            authenticationDTO = gson.fromJson(gtea, AuthenticationDTO.class);
+//            BeanUtils.copyProperties(authenticationDTO, gteaUser);
+//        } finally {
+//            jedis.close();
+//        }
+//        return gteaUser;
     }
 }

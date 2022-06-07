@@ -1,5 +1,6 @@
 package cn.gtea.utils;
 
+import cn.gtea.constant.RespConstant;
 import com.google.common.base.MoreObjects;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,8 +30,8 @@ public class CommonResult<O> {
     }
 
     public CommonResult(O data, String requestNo) {
-        this.code = "C00200";
-        this.msg = "ok";
+        this.code = RespConstant.SUCCESS.getCode();
+        this.msg = RespConstant.SUCCESS.getMsg();
         this.requestNo = requestNo;
         this.data = data;
     }
@@ -40,5 +41,12 @@ public class CommonResult<O> {
         this.msg = msg;
         this.requestNo = requestNo;
         this.data = data;
+    }
+
+    public CommonResult(String code, String msg, String requestNo) {
+        this.code = code;
+        this.msg = msg;
+        this.requestNo = requestNo;
+        this.data = null;
     }
 }

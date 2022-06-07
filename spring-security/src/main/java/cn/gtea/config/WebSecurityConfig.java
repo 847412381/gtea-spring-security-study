@@ -1,49 +1,35 @@
 package cn.gtea.config;
 
-import cn.gtea.constant.AuthenticateConstant;
-import cn.gtea.dto.UserDTO;
 import cn.gtea.filter.GteaTokenFilter;
-import cn.gtea.service.GteaUserDetailServiceManager;
 import cn.gtea.utils.CommonResult;
 import cn.gtea.utils.RandomUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.savedrequest.RequestCacheAwareFilter;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Map;
 
 @EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private AuthenticationProvider authenticationProvider;
-
-    @Bean
-    public UserDetailsService userDetailsService() {
-        Map<String, UserDTO> map = AuthenticateConstant.getMap();
-        UserDTO userDTO = map.get("yzm");
-        UserDetails build = GteaUser.builder().username(userDTO.getUsername()).password(userDTO.getPassword())
-                .authorities(userDTO.getAuthorities()).passwordEncoder(t -> passwordEncoder().encode(t)).build();
-        GteaUserDetailServiceManager gteaManager = new GteaUserDetailServiceManager();
-        gteaManager.createUser(build);
-        return gteaManager;
-    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -64,6 +50,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public GteaTokenFilter gteaTokenFilter() throws Exception {
         GteaTokenFilter gteaTokenFilter = new GteaTokenFilter(authenticationManager());
         gteaTokenFilter.setAuthenticationSuccessHandler(gteaAuthenticationSuccessHandler());
+        gteaTokenFilter.setAuthenticationFailureHandler(gteaAuthenticationFailureHandler());
         return gteaTokenFilter;
     }
 
@@ -76,6 +63,24 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 try {
                     response.setContentType("application/json;charset=utf-8");
                     CommonResult<String> commonResult = new CommonResult<>("登录成功", RandomUtil.generatedReqNo());
+                    PrintWriter out = response.getWriter();
+                    out.write(commonResult.toString());
+                    out.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+    }
+
+    @Bean
+    public AuthenticationFailureHandler gteaAuthenticationFailureHandler() {
+        return new AuthenticationFailureHandler() {
+            @Override
+            public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
+                try {
+                    response.setContentType("application/json;charset=utf-8");
+                    CommonResult<String> commonResult = new CommonResult<>("登录失败", RandomUtil.generatedReqNo());
                     PrintWriter out = response.getWriter();
                     out.write(commonResult.toString());
                     out.flush();

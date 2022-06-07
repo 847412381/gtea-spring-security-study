@@ -1,5 +1,6 @@
 package cn.gtea.filter;
 
+import cn.gtea.constant.RespConstant;
 import cn.gtea.query.UserQuery;
 import cn.gtea.token.GteaToken;
 import cn.gtea.utils.CommonResult;
@@ -39,6 +40,7 @@ public class GteaTokenFilter extends AbstractAuthenticationProcessingFilter {
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException {
 
         ServletInputStream in = request.getInputStream();
+        ServletOutputStream out = response.getOutputStream();
         StringBuilder sb = new StringBuilder();
         byte[] buffer = new byte[1024];
         while ((in.read(buffer)) != -1) {
@@ -53,26 +55,30 @@ public class GteaTokenFilter extends AbstractAuthenticationProcessingFilter {
         try {
             userQuery = gson.fromJson(sb.toString().trim(), UserQuery.class);
         } catch (JsonSyntaxException e) {
-            e.printStackTrace();
+            log.error(log.getName(), e);
             log.error("字符串转为json出错 ====>" + sb.toString());
-            throw new RuntimeException("字符串转为json出错");
+            Gson failResult = new GsonBuilder().create();
+
+            CommonResult<String> result = new CommonResult<>(
+                    RespConstant.FORMAT_JSON_ERROR.getCode(),
+                    RespConstant.FORMAT_JSON_ERROR.getMsg(),
+                    RandomUtil.generatedReqNo());
+            out.write(failResult.toJson(result).getBytes());
+            return null;
         }
 
         if (userQuery != null && StrUtil.isAllNotEmpty(userQuery.getPrincipal(), userQuery.getCredentials())) {
             GteaToken token = new GteaToken(userQuery.getPrincipal(), userQuery.getCredentials());
-            // Allow subclasses to set the "details" property
             setDetails(request, token);
             return this.getAuthenticationManager().authenticate(token);
         }else {
             response.setContentType("application/json;charset=utf-8");
             Gson failResult = new GsonBuilder().create();
-            CommonResult<String> result = new CommonResult<>("EXP0001", "用户名或密码不存在",
-                    RandomUtil.generatedReqNo(),"");
-            String s = failResult.toJson(result);
-            ServletOutputStream outputStream = response.getOutputStream();
-            outputStream.write(s.getBytes());
+            CommonResult<String> result = new CommonResult<>(RespConstant.PARAM_EMPTY.getCode(), "用户名或密码不存在",
+                    RandomUtil.generatedReqNo());
+            out.write(failResult.toJson(result).getBytes());
             log.error("用户名或密码不存在 ====> " + userQuery);
-            throw new RuntimeException("用户名或密码不存在");
+            return null;
         }
     }
 
