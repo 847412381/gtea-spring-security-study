@@ -29,7 +29,7 @@ public class GteaOrdinaryUserRoleEntity {
     @TableField
     private String roleName;
     @TableField
-    private String roleStatus;
+    private Integer roleStatus;
     @TableField
     private LocalDateTime createTime;
     @TableField
