@@ -29,6 +29,13 @@ public class CommonResult<O> {
                 .toString();
     }
 
+    public CommonResult(O data) {
+        this.code = RespConstant.SUCCESS.getCode();
+        this.msg = RespConstant.SUCCESS.getMsg();
+        this.requestNo = RandomUtil.generatedReqNo();
+        this.data = data;
+    }
+
     public CommonResult(O data, String requestNo) {
         this.code = RespConstant.SUCCESS.getCode();
         this.msg = RespConstant.SUCCESS.getMsg();
@@ -36,17 +43,10 @@ public class CommonResult<O> {
         this.data = data;
     }
 
-    public CommonResult(String code, String msg, String requestNo, O data) {
+    public CommonResult(String code, String msg, O data) {
         this.code = code;
         this.msg = msg;
-        this.requestNo = requestNo;
+        this.requestNo = RandomUtil.generatedReqNo();
         this.data = data;
-    }
-
-    public CommonResult(String code, String msg, String requestNo) {
-        this.code = code;
-        this.msg = msg;
-        this.requestNo = requestNo;
-        this.data = null;
     }
 }

@@ -162,7 +162,7 @@ public class GteaUserDetailServiceManager implements UserDetailsManager {
                 .username(entity.getUserName())
                 .password(entity.getUserPass())
                 .authorities(roles)
-                .passwordEncoder(t -> passwordEncoder.encode(t)).build();
+                .build();
 
 //        AuthenticationDTO authenticationDTO;
 //        Jedis jedis = JedisUtil.create();

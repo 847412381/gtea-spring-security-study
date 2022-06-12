@@ -1,6 +1,6 @@
 package cn.gtea.controller;
 
-import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,26 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class TestController {
-
-    @PostMapping("/doLogin")
-    public String doLogin() {
-        return "doLogin";
-    }
-
-    @PostMapping("/doLoginSuccess")
-    public String doLoginSuccess() {
-        return "doLoginSuccess";
-    }
-
-    @GetMapping("/login/index")
-    public String loginIndex() {
-        return "未通过授权校验，跳转至此登录界面";
-    }
-
-    @PostMapping("/test1")
-    public String test1() {
-        return "test1";
-    }
 
     @GetMapping("/admin/r1")
     @PreAuthorize("hasAuthority('admin')")
@@ -45,6 +25,14 @@ public class TestController {
     @PreAuthorize("hasAnyAuthority('guest','admin')")
     public String r2() {
         return "r2";
+    }
+
+
+
+
+    @PostMapping(value = "/query/bbs/posts", produces = MediaType.APPLICATION_JSON_VALUE)
+    public String queryBbsPostAll(@RequestBody String name) {
+        return name;
     }
 
 }

@@ -15,6 +15,9 @@ import java.time.LocalDateTime;
 @TableName("gtea_ordinary_user")
 public class GteaOrdinaryUserEntity {
 
+    /**
+     * 默认雪花算法
+     */
     @TableId
     private Long id;
     @TableField
@@ -23,6 +26,8 @@ public class GteaOrdinaryUserEntity {
     private String userPass;
     @TableField
     private Integer status;
+    @TableField
+    private String type;
     @TableField
     private LocalDateTime createTime;
     @TableField

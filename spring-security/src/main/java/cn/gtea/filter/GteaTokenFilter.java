@@ -1,7 +1,7 @@
 package cn.gtea.filter;
 
 import cn.gtea.constant.RespConstant;
-import cn.gtea.query.UserQuery;
+import cn.gtea.dto.UserLoginDTO;
 import cn.gtea.token.GteaToken;
 import cn.gtea.utils.CommonResult;
 import cn.gtea.utils.RandomUtil;
@@ -51,9 +51,9 @@ public class GteaTokenFilter extends AbstractAuthenticationProcessingFilter {
         gsonBuilder.setPrettyPrinting();
         Gson gson = gsonBuilder.create();
 
-        UserQuery userQuery;
+        UserLoginDTO userLoginDTO;
         try {
-            userQuery = gson.fromJson(sb.toString().trim(), UserQuery.class);
+            userLoginDTO = gson.fromJson(sb.toString().trim(), UserLoginDTO.class);
         } catch (JsonSyntaxException e) {
             log.error(log.getName(), e);
             log.error("字符串转为json出错 ====>" + sb.toString());
@@ -67,8 +67,8 @@ public class GteaTokenFilter extends AbstractAuthenticationProcessingFilter {
             return null;
         }
 
-        if (userQuery != null && StrUtil.isAllNotEmpty(userQuery.getPrincipal(), userQuery.getCredentials())) {
-            GteaToken token = new GteaToken(userQuery.getPrincipal(), userQuery.getCredentials());
+        if (userLoginDTO != null && StrUtil.isAllNotEmpty(userLoginDTO.getPrincipal(), userLoginDTO.getCredentials())) {
+            GteaToken token = new GteaToken(userLoginDTO.getPrincipal(), userLoginDTO.getCredentials());
             setDetails(request, token);
             return this.getAuthenticationManager().authenticate(token);
         }else {
@@ -77,7 +77,7 @@ public class GteaTokenFilter extends AbstractAuthenticationProcessingFilter {
             CommonResult<String> result = new CommonResult<>(RespConstant.PARAM_EMPTY.getCode(), "用户名或密码不存在",
                     RandomUtil.generatedReqNo());
             out.write(failResult.toJson(result).getBytes());
-            log.error("用户名或密码不存在 ====> " + userQuery);
+            log.error("用户名或密码不存在 ====> " + userLoginDTO);
             return null;
         }
     }
