@@ -6,7 +6,7 @@ import java.io.Serializable;
 
 /**
  * @author Ayeze_Mizon
- * 2022-06-12
+ * 2022-06-12a
  */
 @Data
 public class GuestRegisterQuery implements Serializable {
